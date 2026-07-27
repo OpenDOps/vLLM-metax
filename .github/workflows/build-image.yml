@@ -45,20 +45,13 @@ jobs:
       digest: ${{ steps.build.outputs.digest }}
       tag: ${{ steps.meta.outputs.version_tag }}
     steps:
-      - name: Free disk space
+      # Self-hosted runner: no passwordless sudo. Hosted-runner cleanup paths
+      # and docker prune hang waiting for a password — only snapshot disk here.
+      - name: Disk snapshot
         run: |
           set -euo pipefail
-          sudo rm -rf \
-            /usr/share/dotnet \
-            /usr/local/lib/android \
-            /opt/ghc \
-            /opt/hostedtoolcache/CodeQL \
-            /usr/local/share/powershell \
-            /usr/share/swift \
-            /usr/local/.ghcup \
-            || true
-          sudo docker system prune -af || true
-          df -h
+          df -h / /mnt/blockstorage 2>/dev/null || df -h
+          docker system df 2>/dev/null || true
 
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
