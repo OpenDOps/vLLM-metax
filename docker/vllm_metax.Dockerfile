@@ -167,8 +167,11 @@ ENV UV_EXTRA_INDEX_URL=${UV_EXTRA_INDEX_URL}
 ENV UV_INDEX_URL=${UV_INDEX_URL}
 
 # install vllm-metax from built wheels
+# Override OpenCV: MetaX common.txt wants >=4.13 (numpy>=2) which conflicts with mcoplib's numpy<2.
 COPY --from=wheel_build /workspace/vllm_metax_wheel_dist /tmp/wheels
+COPY requirements/opencv_override.txt requirements/opencv_override.txt
 RUN --mount=type=cache,target=/root/.cache/uv \
+    UV_OVERRIDE=requirements/opencv_override.txt \
     uv pip install /tmp/wheels/* 
 
 # install empty vllm
