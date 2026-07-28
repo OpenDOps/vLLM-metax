@@ -1,6 +1,7 @@
 # Build + publish S0 vllm-metax image to GHCR (ADR-0015 Phase 0).
-# Uses upstream docker/vllm_metax.Dockerfile; no MetaX Harbor login required.
-# Runtime smoke still needs C550 — this job is CPU-only image build.
+# Checks out plugin source at inputs.git_ref, then restores this fork's
+# docker/vllm_metax.Dockerfile + requirements/opencv_override.txt for the build.
+# No MetaX Harbor login required. Runtime smoke still needs C550 — CPU-only image build.
 
 name: Build vLLM-MetaX image
 
@@ -63,6 +64,12 @@ jobs:
         run: |
           set -euo pipefail
           REF="${{ inputs.git_ref }}"
+          # Stash fork packaging overlays before switching to plugin source ref.
+          OVERLAY_DIR="${RUNNER_TEMP}/opendops-build-overlay"
+          mkdir -p "${OVERLAY_DIR}"
+          cp -a docker/vllm_metax.Dockerfile "${OVERLAY_DIR}/"
+          cp -a requirements/opencv_override.txt "${OVERLAY_DIR}/"
+
           if git cat-file -e "${REF}^{commit}" 2>/dev/null; then
             git checkout -f "${REF}"
           else
@@ -73,6 +80,14 @@ jobs:
               "+refs/heads/${REF}:refs/remotes/upstream/${REF}"
             git checkout -f "${REF}"
           fi
+
+          mkdir -p docker requirements
+          cp -a "${OVERLAY_DIR}/vllm_metax.Dockerfile" docker/vllm_metax.Dockerfile
+          cp -a "${OVERLAY_DIR}/opencv_override.txt" requirements/opencv_override.txt
+          grep -q 'UV_OVERRIDE=requirements/opencv_override.txt' docker/vllm_metax.Dockerfile
+          test -f requirements/opencv_override.txt
+          echo "Restored fork overlay: docker/vllm_metax.Dockerfile + requirements/opencv_override.txt"
+
           echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "Building from $(git rev-parse HEAD) ($(git describe --tags --always))"
@@ -137,6 +152,7 @@ jobs:
             echo "|-------|-------|"
             echo "| git_ref | \`${{ inputs.git_ref }}\` |"
             echo "| commit | \`${{ steps.ref.outputs.commit }}\` |"
+            echo "| packaging overlay | fork \`Dockerfile\` + \`opencv_override.txt\` |"
             echo "| VLLM_VERSION | \`${{ inputs.vllm_version }}\` |"
             echo "| MACA_VERSION | \`${{ inputs.maca_version }}\` |"
             echo "| image | \`${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.version_tag }}\` |"
