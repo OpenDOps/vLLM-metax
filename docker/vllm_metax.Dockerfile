@@ -31,6 +31,12 @@ ENV UV_INDEX_STRATEGY="unsafe-best-match"
 # Use copy mode to avoid hardlink failures with Docker cache mounts
 ENV UV_LINK_MODE=copy
 
+# Must be on base so wheel_build (and final) can resolve MetaX torch/mcoplib wheels.
+ARG UV_EXTRA_INDEX_URL
+ARG UV_INDEX_URL
+ENV UV_EXTRA_INDEX_URL=${UV_EXTRA_INDEX_URL}
+ENV UV_INDEX_URL=${UV_INDEX_URL}
+
 WORKDIR /workspace
 
 #################### BASE BUILD IMAGE ####################
@@ -106,9 +112,6 @@ ENV LD_LIBRARY_PATH=/opt/mxdriver/lib:${MACA_PATH}/lib:${MACA_PATH}/mxgpu_llvm/l
 
 # install build and runtime dependencies and cache them
 WORKDIR /workspace
-
-ARG UV_INDEX_URL
-ENV UV_INDEX_URL=${UV_INDEX_URL}
 
 # install vllm-metax build dependencies
 COPY requirements/build.txt requirements/build.txt
