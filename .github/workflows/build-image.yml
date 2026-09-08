@@ -11,15 +11,15 @@ on:
       git_ref:
         description: Plugin source git ref (tag/branch/SHA)
         required: true
-        default: v0.20.0
+        default: v0.24.0
       vllm_version:
         description: VLLM_VERSION build-arg (pip vllm==…)
         required: true
-        default: v0.20.0
+        default: v0.24.0
       maca_version:
         description: MACA_VERSION build-arg
         required: true
-        default: "3.7.0"
+        default: "3.8.2"
       push:
         description: Push image to GHCR
         type: boolean
