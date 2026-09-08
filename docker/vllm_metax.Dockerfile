@@ -19,8 +19,10 @@ ENV PATH="/opt/venv/bin:/root/.local/bin:$PATH"
 RUN dnf -y install python3-pip && \
     dnf clean all
 
+# --seed puts pip in the venv. Plain `uv venv` leaves `python -m pip` broken
+# (/opt/venv/bin/python: No module named pip) even though `uv pip` works.
 RUN python3 -m pip install --no-cache uv && \
-    uv venv /opt/venv --python=${PYTHON_VERSION}
+    uv venv /opt/venv --python=${PYTHON_VERSION} --seed
 
 RUN python3 --version && \
     uv self version
@@ -131,8 +133,13 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 #################### CLEANUP ####################
 FROM full_maca AS clean_maca
 
+ARG MACA_VERSION
+
+# Do NOT rpm -e mcflashattn_*: MetaX torch._C is linked against libmcFlashAttn.so.
+# Stripping it makes `import torch` fail with
+#   ImportError: libmcFlashAttn.so: cannot open shared object file
+# (seen on C550 with ghcr.io/opendops/vllm-metax:sha-600f6b6d).
 RUN rpm -e --nodeps \
-        mcflashattn_${MACA_VERSION} \
         mcflashinfer_${MACA_VERSION} \
         mxreport-${MACA_VERSION} \
         mccltests-${MACA_VERSION} && \
@@ -162,6 +169,9 @@ RUN yum makecache && yum install -y \
 
 COPY --from=clean_maca /opt/maca /opt/maca
 COPY --from=clean_maca /opt/mxdriver /opt/mxdriver
+
+RUN find /opt/maca -name 'libmcFlashAttn.so*' | grep -q . \
+    || (echo "libmcFlashAttn.so missing under /opt/maca — do not strip mcflashattn" >&2; exit 1)
 
 WORKDIR /workspace
 ARG UV_EXTRA_INDEX_URL
