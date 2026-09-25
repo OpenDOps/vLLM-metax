@@ -11,11 +11,11 @@ on:
       git_ref:
         description: Plugin source git ref (tag/branch/SHA)
         required: true
-        default: v0.24.0
+        default: v0.26.0
       vllm_version:
         description: VLLM_VERSION build-arg (pip vllm==…)
         required: true
-        default: v0.24.0
+        default: v0.26.0
       maca_version:
         description: MACA_VERSION build-arg
         required: true
