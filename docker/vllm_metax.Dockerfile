@@ -93,8 +93,12 @@ RUN yum install -y binutils gzip xz \
            *) echo "unsupported $member in $f" >&2; exit 1 ;; \
          esac; \
        done \
-    && test -d /opt/maca \
+    && MACA_ROOT="$(ls -d /opt/maca-* 2>/dev/null | head -n1)" \
+    && test -n "$MACA_ROOT" \
+    && test -d "$MACA_ROOT/tools/cu-bridge" \
+    && ln -sfn "$MACA_ROOT" /opt/maca \
     && test -d /opt/maca/tools/cu-bridge \
+    && test -x /opt/maca/tools/cu-bridge/bin/cucc \
     && echo "/opt/maca/lib" > /etc/ld.so.conf.d/maca.conf \
     && echo "/opt/maca/mxgpu_llvm/lib" >> /etc/ld.so.conf.d/maca.conf \
     && ldconfig \
