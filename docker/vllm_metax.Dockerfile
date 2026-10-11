@@ -50,6 +50,7 @@ RUN yum makecache && yum install -y \
     unzip vim git openblas-devel make cmake \
     ninja-build gcc g++ procps-ng \
     libibverbs librdmacm libibumad \
+    numactl-libs \
     && yum clean all
 
 ARG MACA_VERSION
