@@ -71,13 +71,26 @@ RUN yum makecache && \
 
 # Installing MACA SDK from Softnova offline drop (public yum has no maca_sdk 3.8.2).
 # Workflow copies maca-sdk-3.8.2.6-deb-x86_64.tar.xz into the build context from the
-# self-hosted runner vendor dir. Installer also ships cu-bridge; do not curl gitee.
+# self-hosted runner vendor dir. Archive is .deb-only; mxmaca-sdk-install.sh selects
+# TYPE=rpm on yum hosts and cannot install these packages, so unpack data.tar.* here.
+# cu-bridge ships in the SDK; do not curl gitee.
 COPY maca-sdk-3.8.2.6-deb-x86_64.tar.xz /tmp/maca-sdk.tar.xz
-RUN tar -xJf /tmp/maca-sdk.tar.xz -C /tmp \
-    && /tmp/maca-sdk-3.8.2.6/mxmaca-sdk-install.sh -f \
+RUN yum install -y binutils xz \
+    && tar -xJf /tmp/maca-sdk.tar.xz -C /tmp \
+    && cd /tmp/maca-sdk-3.8.2.6 \
+    && for f in deb/*.deb; do \
+         ar p "$f" data.tar.xz 2>/dev/null | tar -xJ -C / \
+         || ar p "$f" data.tar.gz 2>/dev/null | tar -xz -C / \
+         || ar p "$f" data.tar 2>/dev/null | tar -x -C / \
+         || { echo "failed to unpack $f" >&2; exit 1; }; \
+       done \
     && test -d /opt/maca \
     && test -d /opt/maca/tools/cu-bridge \
-    && rm -rf /tmp/maca-sdk.tar.xz /tmp/maca-sdk-3.8.2.6
+    && echo "/opt/maca/lib" > /etc/ld.so.conf.d/maca.conf \
+    && echo "/opt/maca/mxgpu_llvm/lib" >> /etc/ld.so.conf.d/maca.conf \
+    && ldconfig \
+    && rm -rf /tmp/maca-sdk.tar.xz /tmp/maca-sdk-3.8.2.6 \
+    && yum clean all && rm -rf /var/cache/yum
 
 #################### Install MACA SDK and Metax-Driver ####################
 

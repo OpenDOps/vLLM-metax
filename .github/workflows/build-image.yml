@@ -125,7 +125,7 @@ jobs:
           cp -a "${{ env.MACA_SDK_ARCHIVE }}" ./maca-sdk-3.8.2.6-deb-x86_64.tar.xz
           test -f ./maca-sdk-3.8.2.6-deb-x86_64.tar.xz
           grep -q 'maca-sdk-3.8.2.6-deb-x86_64.tar.xz' docker/vllm_metax.Dockerfile
-          grep -q 'mxmaca-sdk-install.sh' docker/vllm_metax.Dockerfile
+          grep -q 'ar p' docker/vllm_metax.Dockerfile
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
