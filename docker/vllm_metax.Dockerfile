@@ -69,30 +69,15 @@ RUN yum makecache && \
     yum install -y metax-driver-${MACA_VERSION}* mxgvm && \
     yum clean all && rm -rf /var/cache/yum /tmp/*
 
-# Installing MACA SDK
-RUN printf "[maca-sdk]\n\
-name=Maca Sdk Yum Repository\n\
-baseurl=https://repos.metax-tech.com/r/maca-sdk-rpm-$(uname -m)/\n\
-enabled=1\n\
-gpgcheck=0" > /etc/yum.repos.d/maca-sdk-rpm.repo
-
-RUN yum makecache && \
-    yum install -y maca_sdk-${MACA_VERSION}* && \
-    yum clean all && rm -rf /var/cache/yum /tmp/*
-
-# https://gitee.com/metax-maca/cu-bridge/repository/archive/3.5.3.zip
-## Install cu-bridge
-ARG CU_BRIDGE_VERSION
-RUN cd /tmp/ && \
-    export MACA_PATH=/opt/maca && \
-    curl -o ${CU_BRIDGE_VERSION}.zip -LsSf https://gitee.com/metax-maca/cu-bridge/repository/archive/${CU_BRIDGE_VERSION}.zip && \
-    unzip ${CU_BRIDGE_VERSION}.zip && \
-    mv cu-bridge-${CU_BRIDGE_VERSION} cu-bridge && \
-    chmod 755 cu-bridge -Rf && \
-    cd cu-bridge && \
-    mkdir build && cd ./build && \
-    cmake -DCMAKE_INSTALL_PREFIX=/opt/maca/tools/cu-bridge ../ && \
-    make && make install
+# Installing MACA SDK from Softnova offline drop (public yum has no maca_sdk 3.8.2).
+# Workflow copies maca-sdk-3.8.2.6-deb-x86_64.tar.xz into the build context from the
+# self-hosted runner vendor dir. Installer also ships cu-bridge; do not curl gitee.
+COPY maca-sdk-3.8.2.6-deb-x86_64.tar.xz /tmp/maca-sdk.tar.xz
+RUN tar -xJf /tmp/maca-sdk.tar.xz -C /tmp \
+    && /tmp/maca-sdk-3.8.2.6/mxmaca-sdk-install.sh -f \
+    && test -d /opt/maca \
+    && test -d /opt/maca/tools/cu-bridge \
+    && rm -rf /tmp/maca-sdk.tar.xz /tmp/maca-sdk-3.8.2.6
 
 #################### Install MACA SDK and Metax-Driver ####################
 
@@ -135,16 +120,18 @@ FROM full_maca AS clean_maca
 
 ARG MACA_VERSION
 
-# Do NOT rpm -e mcflashattn_*: MetaX torch._C is linked against libmcFlashAttn.so.
-# Stripping it makes `import torch` fail with
-#   ImportError: libmcFlashAttn.so: cannot open shared object file
-# (seen on C550 with ghcr.io/opendops/vllm-metax:sha-600f6b6d).
-RUN rpm -e --nodeps \
+# Do NOT strip mcflashattn_*: MetaX torch._C is linked against libmcFlashAttn.so.
+# Softnova .deb SDK may not register RPMs; ignore missing packages.
+RUN (rpm -e --nodeps \
         mcflashinfer_${MACA_VERSION} \
+        mcflashinfer_${MACA_VERSION}* \
         mxreport-${MACA_VERSION} \
-        mccltests-${MACA_VERSION} && \
-    find /opt/maca/ -type f -name "*.a" -delete && \
-    yum clean all && rm -rf /var/cache/yum /tmp/*
+        mxreport-${MACA_VERSION}* \
+        mccltests-${MACA_VERSION} \
+        mccltests-${MACA_VERSION}* \
+        2>/dev/null || true) \
+    && find /opt/maca/ -type f -name "*.a" -delete \
+    && yum clean all && rm -rf /var/cache/yum /tmp/*
 
 #################### CLEANUP ####################
 

@@ -1,6 +1,8 @@
 # Build + publish S0 vllm-metax image to GHCR (ADR-0015 Phase 0).
 # Checks out plugin source at inputs.git_ref, then restores this fork's
 # docker/vllm_metax.Dockerfile + requirements/opencv_override.txt for the build.
+# MACA 3.8.2 SDK is not on public yum; self-hosted runner must have
+# /home/github-runner/vendor/maca-sdk-3.8.2.6-deb-x86_64.tar.xz.
 # No MetaX Harbor login required. Runtime smoke still needs C550 — CPU-only image build.
 
 name: Build vLLM-MetaX image
@@ -35,6 +37,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
+  MACA_SDK_ARCHIVE: /home/github-runner/vendor/maca-sdk-3.8.2.6-deb-x86_64.tar.xz
 
 jobs:
   build:
@@ -113,6 +116,17 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "Image: ${IMAGE}:${VERSION_TAG} (+ ${SHA_TAG})"
 
+      - name: Stage Softnova MACA SDK into build context
+        run: |
+          set -euo pipefail
+          test -f "${{ env.MACA_SDK_ARCHIVE }}" \
+            || { echo "Missing Softnova SDK at ${{ env.MACA_SDK_ARCHIVE }}" >&2; exit 1; }
+          ls -lh "${{ env.MACA_SDK_ARCHIVE }}"
+          cp -a "${{ env.MACA_SDK_ARCHIVE }}" ./maca-sdk-3.8.2.6-deb-x86_64.tar.xz
+          test -f ./maca-sdk-3.8.2.6-deb-x86_64.tar.xz
+          grep -q 'maca-sdk-3.8.2.6-deb-x86_64.tar.xz' docker/vllm_metax.Dockerfile
+          grep -q 'mxmaca-sdk-install.sh' docker/vllm_metax.Dockerfile
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -152,7 +166,8 @@ jobs:
             echo "|-------|-------|"
             echo "| git_ref | \`${{ inputs.git_ref }}\` |"
             echo "| commit | \`${{ steps.ref.outputs.commit }}\` |"
-            echo "| packaging overlay | fork \`Dockerfile\` + \`opencv_override.txt\` |"
+            echo "| packaging overlay | fork \`Dockerfile\` + \`opencv_override.txt\` + Softnova SDK |"
+            echo "| MACA SDK archive | \`maca-sdk-3.8.2.6-deb-x86_64.tar.xz\` |"
             echo "| VLLM_VERSION | \`${{ inputs.vllm_version }}\` |"
             echo "| MACA_VERSION | \`${{ inputs.maca_version }}\` |"
             echo "| image | \`${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.version_tag }}\` |"
