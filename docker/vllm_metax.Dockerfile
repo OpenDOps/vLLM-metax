@@ -75,14 +75,23 @@ RUN yum makecache && \
 # TYPE=rpm on yum hosts and cannot install these packages, so unpack data.tar.* here.
 # cu-bridge ships in the SDK; do not curl gitee.
 COPY maca-sdk-3.8.2.6-deb-x86_64.tar.xz /tmp/maca-sdk.tar.xz
-RUN yum install -y binutils xz \
+# Softnova 3.8.2.6 debs use data.tar.gz (not data.tar.xz). Detect the member
+# with `ar t` so we do not feed gzip payloads to xz.
+RUN yum install -y binutils gzip xz \
     && tar -xJf /tmp/maca-sdk.tar.xz -C /tmp \
     && cd /tmp/maca-sdk-3.8.2.6 \
+    && set -eu \
     && for f in deb/*.deb; do \
-         ar p "$f" data.tar.xz 2>/dev/null | tar -xJ -C / \
-         || ar p "$f" data.tar.gz 2>/dev/null | tar -xz -C / \
-         || ar p "$f" data.tar 2>/dev/null | tar -x -C / \
-         || { echo "failed to unpack $f" >&2; exit 1; }; \
+         echo "unpack $f"; \
+         member="$(ar t "$f" | grep -E '^data\.tar(\.|$)' | head -n1)"; \
+         test -n "$member" || { echo "no data.tar* in $f" >&2; ar t "$f" >&2; exit 1; }; \
+         case "$member" in \
+           data.tar.gz)  ar p "$f" "$member" | tar -xz -C / ;; \
+           data.tar.xz)  ar p "$f" "$member" | tar -xJ -C / ;; \
+           data.tar.bz2) ar p "$f" "$member" | tar -xj -C / ;; \
+           data.tar)     ar p "$f" "$member" | tar -x  -C / ;; \
+           *) echo "unsupported $member in $f" >&2; exit 1 ;; \
+         esac; \
        done \
     && test -d /opt/maca \
     && test -d /opt/maca/tools/cu-bridge \
