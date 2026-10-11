@@ -11,13 +11,13 @@ on:
       git_ref:
         description: Plugin source git ref (tag/branch/SHA)
         required: true
-        default: v0.26.0
+        default: master
       vllm_version:
         description: VLLM_VERSION build-arg (pip vllm==…)
         required: true
         default: v0.30.0
       maca_version:
-        description: MACA_VERSION build-arg
+        description: MACA SDK prefix in repos.metax-tech.com maca-sdk-rpm. No 3.8.2 SDK is published; 3.9.0 installs maca_sdk 3.9.0.29.
         required: true
         default: "3.9.0"
       push:
