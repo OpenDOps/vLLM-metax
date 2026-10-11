@@ -1,6 +1,6 @@
 # Build + publish S0 vllm-metax image to GHCR (ADR-0015 Phase 0).
 # Checks out plugin source at inputs.git_ref, then restores this fork's
-# docker/vllm_metax.Dockerfile + requirements/opencv_override.txt for the build.
+# docker/vllm_metax.Dockerfile + opencv_override.txt + maca.txt for the build.
 # MACA 3.8.2 SDK is not on public yum; self-hosted runner must have
 # /home/github-runner/vendor/maca-sdk-3.8.2.6-deb-x86_64.tar.xz.
 # No MetaX Harbor login required. Runtime smoke still needs C550 — CPU-only image build.
@@ -72,6 +72,7 @@ jobs:
           mkdir -p "${OVERLAY_DIR}"
           cp -a docker/vllm_metax.Dockerfile "${OVERLAY_DIR}/"
           cp -a requirements/opencv_override.txt "${OVERLAY_DIR}/"
+          cp -a requirements/maca.txt "${OVERLAY_DIR}/"
 
           if git cat-file -e "${REF}^{commit}" 2>/dev/null; then
             git checkout -f "${REF}"
@@ -87,9 +88,12 @@ jobs:
           mkdir -p docker requirements
           cp -a "${OVERLAY_DIR}/vllm_metax.Dockerfile" docker/vllm_metax.Dockerfile
           cp -a "${OVERLAY_DIR}/opencv_override.txt" requirements/opencv_override.txt
+          cp -a "${OVERLAY_DIR}/maca.txt" requirements/maca.txt
           grep -q 'UV_OVERRIDE=requirements/opencv_override.txt' docker/vllm_metax.Dockerfile
           test -f requirements/opencv_override.txt
-          echo "Restored fork overlay: docker/vllm_metax.Dockerfile + requirements/opencv_override.txt"
+          # v0.26.0 tag maca.txt dual-pins apache-tvm-ffi; overlay must not retain 0.1.3.dev11
+          ! grep -q 'apache-tvm-ffi==0.1.3.dev11' requirements/maca.txt
+          echo "Restored fork overlay: Dockerfile + opencv_override.txt + maca.txt"
 
           echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
@@ -166,7 +170,7 @@ jobs:
             echo "|-------|-------|"
             echo "| git_ref | \`${{ inputs.git_ref }}\` |"
             echo "| commit | \`${{ steps.ref.outputs.commit }}\` |"
-            echo "| packaging overlay | fork \`Dockerfile\` + \`opencv_override.txt\` + Softnova SDK |"
+            echo "| packaging overlay | fork \`Dockerfile\` + \`opencv_override.txt\` + \`maca.txt\` + Softnova SDK |"
             echo "| MACA SDK archive | \`maca-sdk-3.8.2.6-deb-x86_64.tar.xz\` |"
             echo "| VLLM_VERSION | \`${{ inputs.vllm_version }}\` |"
             echo "| MACA_VERSION | \`${{ inputs.maca_version }}\` |"
