@@ -7,9 +7,13 @@
 apex==0.1+metax3.8.2.2
 block_sparse_attn==0.0.2+metax3.8.2.2
 torch==2.10.0+metax3.8.2.2
-torchaudio==2.4.1+metax3.8.2.2
-torchcodec==0.6.0+metax3.8.2.2
-torchvision==0.25.0+metax3.8.2.2
+# Use *torch2.10 local-version wheels with torch 2.10. The plain
+# +metax3.8.2.2 torchaudio/vision builds look up CUDA c10 symbols that
+# MetaX torch 2.10 does not export → libtorchaudio.so undefined symbol
+# at vllm serve import (transformers → torchaudio).
+torchaudio==2.4.1+metax3.8.2.2torch2.10
+torchcodec==0.6.0+metax3.8.2.2torch2.10
+torchvision==0.25.0+metax3.8.2.2torch2.10
 triton==3.6.0+metax3.8.2.2
 
 causal_conv1d==1.5.4+metax3.8.2.2torch2.10

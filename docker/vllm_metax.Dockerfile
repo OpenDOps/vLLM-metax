@@ -212,6 +212,14 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Fix(hank): don't know why vllm installation also brings in flashinfer-python, remove it here.
 RUN uv pip uninstall flashinfer-python cupy-cuda12x
 
+# Force torch2.10-local torchaudio/vision even if an older Requires-Dist
+# resolved the plain +metax3.8.2.2 wheels (ABI break vs torch 2.10).
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --reinstall \
+      "torchaudio==2.4.1+metax3.8.2.2torch2.10" \
+      "torchvision==0.25.0+metax3.8.2.2torch2.10" \
+      "torchcodec==0.6.0+metax3.8.2.2torch2.10"
+
 # Fix(hank): torch-metax still use numpy<2?
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install numpy==1.26
