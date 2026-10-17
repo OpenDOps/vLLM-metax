@@ -4,8 +4,8 @@
 # Metax PyPI source
 --extra-index-url https://repos.metax-tech.com/r/maca-pypi/simple
 
-apex==0.1+metax3.8.2.2
-block_sparse_attn==0.0.2+metax3.8.2.2
+apex==0.1+metax3.8.2.2torch2.10
+block_sparse_attn==0.0.2+metax3.8.2.2torch2.10
 torch==2.10.0+metax3.8.2.2
 # Use *torch2.10 local-version wheels with torch 2.10. The plain
 # +metax3.8.2.2 torchaudio/vision builds look up CUDA c10 symbols that
@@ -14,13 +14,14 @@ torch==2.10.0+metax3.8.2.2
 torchaudio==2.4.1+metax3.8.2.2torch2.10
 torchcodec==0.6.0+metax3.8.2.2torch2.10
 torchvision==0.25.0+metax3.8.2.2torch2.10
-triton==3.6.0+metax3.8.2.2
+triton==3.6.0+metax3.8.3.1torch2.10
 
 causal_conv1d==1.5.4+metax3.8.2.2torch2.10
 dropout_layer_norm==0.1+metax3.8.2.2torch2.10
 
 # attention
 flash_attn==2.6.3+metax3.8.2.2torch2.10
+flash-linear-attention==0.5.0+metax3.8.2.2torch2.10
 flash_attn_3==3.0.0+metax3.8.2.2torch2.10
 flash_mla==1.0.1+metax3.8.2.2torch2.10
 flashinfer==0.2.6+metax3.8.2.2torch2.10
@@ -34,17 +35,17 @@ xentropy_cuda_lib==0.1+metax3.8.2.2torch2.10
 # mcpy==3.5.3.3
 
 deep_ep==1.0.0+metax3.8.2.1torch2.10
-deep_gemm==0.2.0+maca0.4.11.1
+deep_gemm==0.2.0+maca0.4.13.929
 
-lmcache==0.5.3+maca3.8.2.201
-nixl==1.0.0+maca3.8.2.208
+lmcache==0.5.4+maca3.8.2.0
+nixl==1.0.0+maca3.8.2.401
 # mooncake-transfer-engine is manylinux_2_35 only (Ubuntu 22.04). UBI9 is
 # manylinux_2_34 / glibc 2.34, so uv cannot install the MetaX wheel. Optional
 # KV-transfer dep; omit for UBI9 Phase 0 images. MetaX published images use
 # ubuntu22.04 for this package.
-# mooncake-transfer-engine==0.3.12+geb7daa.d20260903.maca3.8.2.104
+# mooncake-transfer-engine==0.3.12+geb7daa.d20260924.maca3.8.2.105
 
-mcoplib==0.4.11+ga3b69de.maca3.8.0.25.torch2.10
+mcoplib==0.4.13+gcdc10b7.maca3.8.2.6.torch2.10
 
 tilelang==0.1.12+maca
 apache-tvm-ffi==0.1.11+maca

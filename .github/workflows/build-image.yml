@@ -13,11 +13,11 @@ on:
       git_ref:
         description: Plugin source git ref (tag/branch/SHA)
         required: true
-        default: v0.26.0
+        default: v0.28.0
       vllm_version:
         description: VLLM_VERSION build-arg (pip vllm==…). C550 host driver is 3.8.2.25.
         required: true
-        default: v0.26.0
+        default: v0.28.0
       maca_version:
         description: MACA_VERSION build-arg. C550 pin is 3.8.2; public maca-sdk-rpm has no maca_sdk 3.8.2 build.
         required: true
@@ -93,8 +93,10 @@ jobs:
           cp -a "${OVERLAY_DIR}/maca_private.txt" requirements/maca_private.txt
           grep -q 'UV_OVERRIDE=requirements/opencv_override.txt' docker/vllm_metax.Dockerfile
           test -f requirements/opencv_override.txt
-          # v0.26.0 tag maca.txt dual-pins apache-tvm-ffi; overlay must not retain 0.1.3.dev11
-          ! grep -q 'apache-tvm-ffi==0.1.3.dev11' requirements/maca.txt
+          # v0.28.0 maca.txt also pins apache-tvm-ffi==0.1.12; overlay keeps
+          # apache-tvm-ffi==0.1.11+maca in maca_private.txt only.
+          ! grep -q 'apache-tvm-ffi==' requirements/maca.txt
+          grep -q 'mcoplib==0.4.13' requirements/maca_private.txt
           # UBI9 cannot install manylinux_2_35 mooncake wheels
           ! grep -q '^mooncake-transfer-engine==' requirements/maca_private.txt
           echo "Restored fork overlay: Dockerfile + opencv_override.txt + maca.txt + maca_private.txt"
